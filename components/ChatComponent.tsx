@@ -1,21 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, User, Bot } from "lucide-react";
 
 export default function ChatComponent() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: "/api/chat",
+    initialMessages: [
+      {
+        id: "welcome",
+        role: "assistant",
+        content:
+          "Halo! Saya asisten AI yang siap membantu Anda memahami hak dan kewajiban mahasiswa. Silakan ajukan pertanyaan Anda.",
+      },
+    ],
+  });
   const [isTyping, setIsTyping] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // Auto scroll to bottom when new message arrives
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (scrollAreaRef.current) {
+        const scrollElement = scrollAreaRef.current;
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    };
+    scrollToBottom();
+  }, [messages]);
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!input.trim()) return;
+
     setIsTyping(true);
-    handleSubmit(e).then(() => setIsTyping(false));
+    try {
+      await handleSubmit(e);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const formatMessage = (content: string) => {
+    // Handle bullet points and formatting
+    return content.split("\n").map((line, i) => (
+      <span key={i} className="block">
+        {line.trim()}
+      </span>
+    ));
   };
 
   return (
@@ -25,42 +64,81 @@ export default function ChatComponent() {
           <ArrowLeft className="h-6 w-6" />
         </Link>
         <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-white flex-grow">
-          Chat dengan AI Asisten Mahasiswa
+          SVGuideLines Chat
         </h1>
       </header>
-      <ScrollArea className="flex-grow p-4 space-y-4">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-md p-4 rounded-lg ${m.role === "user" ? "bg-blue-500 text-white" : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white"}`}
-            >
-              <p className="whitespace-pre-wrap">{m.content}</p>
-            </div>
+
+      <div className="flex-grow overflow-hidden relative">
+        <ScrollArea className="absolute inset-0 p-4" ref={scrollAreaRef}>
+          <div className="space-y-4 max-w-3xl mx-auto">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex items-start space-x-2 ${
+                  message.role === "user"
+                    ? "flex-row-reverse space-x-reverse"
+                    : ""
+                }`}
+              >
+                <div
+                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                    message.role === "user"
+                      ? "bg-blue-500"
+                      : "bg-gray-600 dark:bg-gray-700"
+                  }`}
+                >
+                  {message.role === "user" ? (
+                    <User className="h-5 w-5 text-white" />
+                  ) : (
+                    <Bot className="h-5 w-5 text-white" />
+                  )}
+                </div>
+
+                <div
+                  className={`flex-grow max-w-[80%] rounded-lg px-4 py-2 ${
+                    message.role === "user"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap text-sm">
+                    {formatMessage(message.content)}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {isTyping && (
+              <div className="flex items-start space-x-2">
+                <div className="w-8 h-8 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-white" />
+                </div>
+                <div className="bg-white dark:bg-gray-700 rounded-lg px-4 py-2">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        ))}
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="max-w-md p-4 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white">
-              <p>AI sedang mengetik...</p>
-            </div>
-          </div>
-        )}
-      </ScrollArea>
+        </ScrollArea>
+      </div>
+
       <form
         onSubmit={onSubmit}
-        className="p-4 bg-white dark:bg-gray-800 shadow-lg"
+        className="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700"
       >
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 max-w-3xl mx-auto">
           <Input
             value={input}
             onChange={handleInputChange}
             placeholder="Tanyakan tentang hak dan kewajiban Anda..."
             className="flex-grow"
+            disabled={isTyping}
           />
-          <Button type="submit" disabled={isTyping}>
+          <Button type="submit" disabled={isTyping || !input.trim()}>
             Kirim
           </Button>
         </div>
