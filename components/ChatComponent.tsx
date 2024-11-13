@@ -1,55 +1,47 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { ArrowLeft, User, Bot } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function ChatComponent() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/chat",
-    initialMessages: [
-      {
-        id: "welcome",
-        role: "assistant",
-        content:
-          "Halo! Saya asisten AI yang siap membantu Anda memahami hak dan kewajiban mahasiswa. Silakan ajukan pertanyaan Anda.",
+  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+    useChat({
+      api: "/api/chat",
+      initialMessages: [
+        {
+          id: "welcome",
+          role: "assistant",
+          content:
+            "Halo! Saya asisten AI yang siap membantu Anda memahami hak dan kewajiban mahasiswa. Silakan ajukan pertanyaan Anda.",
+        },
+      ],
+      onResponse: (response) => {
+        // This ensures we're properly handling the streaming response
+        if (!response.ok) {
+          console.error("Response error:", response.statusText);
+        }
       },
-    ],
-  });
-  const [isTyping, setIsTyping] = useState(false);
+      onFinish: (message) => {
+        // Handle completion of the response
+        console.log("Response finished:", message);
+      },
+    });
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Auto scroll to bottom when new message arrives
   useEffect(() => {
-    const scrollToBottom = () => {
-      if (scrollAreaRef.current) {
-        const scrollElement = scrollAreaRef.current;
-        scrollElement.scrollTop = scrollElement.scrollHeight;
-      }
-    };
-    scrollToBottom();
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
   }, [messages]);
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    setIsTyping(true);
-    try {
-      await handleSubmit(e);
-    } catch (error) {
-      console.error("Error sending message:", error);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
   const formatMessage = (content: string) => {
-    // Handle bullet points and formatting
     return content.split("\n").map((line, i) => (
       <span key={i} className="block">
         {line.trim()}
@@ -58,91 +50,90 @@ export default function ChatComponent() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
-      <header className="p-4 bg-white dark:bg-gray-800 shadow flex items-center">
-        <Link href="/" className="mr-4">
-          <ArrowLeft className="h-6 w-6" />
-        </Link>
-        <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-white flex-grow">
-          SVGuideLines Chat
-        </h1>
+    <div className="flex flex-col h-screen bg-background">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center px-4">
+          <Link
+            href="/"
+            className="flex items-center hover:opacity-80 transition-opacity"
+          >
+            <ArrowLeft className="h-6 w-6 mr-2" />
+          </Link>
+        </div>
       </header>
 
-      <div className="flex-grow overflow-hidden relative">
-        <ScrollArea className="absolute inset-0 p-4" ref={scrollAreaRef}>
-          <div className="space-y-4 max-w-3xl mx-auto">
-            {messages.map((message) => (
+      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+        <div className="space-y-4 max-w-3xl mx-auto">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn(
+                "flex items-start space-x-2",
+                message.role === "user" && "flex-row-reverse space-x-reverse",
+              )}
+            >
               <div
-                key={message.id}
-                className={`flex items-start space-x-2 ${
-                  message.role === "user"
-                    ? "flex-row-reverse space-x-reverse"
-                    : ""
-                }`}
+                className={cn(
+                  "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+                  message.role === "user" ? "bg-primary" : "bg-secondary",
+                )}
               >
-                <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                    message.role === "user"
-                      ? "bg-blue-500"
-                      : "bg-gray-600 dark:bg-gray-700"
-                  }`}
-                >
-                  {message.role === "user" ? (
-                    <User className="h-5 w-5 text-white" />
-                  ) : (
-                    <Bot className="h-5 w-5 text-white" />
-                  )}
-                </div>
+                {message.role === "user" ? (
+                  <User className="h-5 w-5 text-primary-foreground" />
+                ) : (
+                  <Bot className="h-5 w-5 text-secondary-foreground" />
+                )}
+              </div>
 
-                <div
-                  className={`flex-grow max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.role === "user"
-                      ? "bg-blue-500 text-white"
-                      : "bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap text-sm">
-                    {formatMessage(message.content)}
-                  </div>
+              <div
+                className={cn(
+                  "flex-grow max-w-[80%] rounded-lg px-4 py-2",
+                  message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground",
+                )}
+              >
+                <div className="whitespace-pre-wrap text-sm">
+                  {formatMessage(message.content)}
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
 
-            {isTyping && (
-              <div className="flex items-start space-x-2">
-                <div className="w-8 h-8 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
-                  <Bot className="h-5 w-5 text-white" />
-                </div>
-                <div className="bg-white dark:bg-gray-700 rounded-lg px-4 py-2">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]" />
-                  </div>
+          {isLoading && (
+            <div className="flex items-start space-x-2">
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                <Bot className="h-5 w-5 text-secondary-foreground" />
+              </div>
+              <div className="bg-secondary rounded-lg px-4 py-2">
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
+                  <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.4s]" />
                 </div>
               </div>
-            )}
-          </div>
-        </ScrollArea>
-      </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
 
-      <form
-        onSubmit={onSubmit}
-        className="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700"
-      >
-        <div className="flex space-x-2 max-w-3xl mx-auto">
+      <div className="border-t bg-background p-4">
+        <form
+          onSubmit={handleSubmit}
+          className="container flex gap-2 max-w-3xl mx-auto"
+        >
           <Input
             value={input}
             onChange={handleInputChange}
             placeholder="Tanyakan tentang hak dan kewajiban Anda..."
             className="flex-grow"
-            disabled={isTyping}
+            disabled={isLoading}
           />
-          <Button type="submit" disabled={isTyping || !input.trim()}>
+          <Button type="submit" disabled={isLoading || !input.trim()}>
             Kirim
           </Button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
