@@ -16,6 +16,7 @@ export default function ChatComponent() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
       api: "/api/chat",
+      streamProtocol: "text",
       initialMessages: [
         {
           id: "welcome",
@@ -100,7 +101,7 @@ export default function ChatComponent() {
                       <Bot className="h-5 w-5 text-secondary" />
                     )}
                   </div>
-                  <div className="flex-grow">
+                  <div className="flex-grow min-h-[28px] flex items-center">
                     <div className="whitespace-pre-wrap text-sm">
                       {formatMessage(message.content)}
                     </div>
