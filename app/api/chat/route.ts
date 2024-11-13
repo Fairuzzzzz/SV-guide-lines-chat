@@ -1,55 +1,14 @@
-import { StreamingTextResponse } from "ai";
+import { StreamingTextResponse, Message } from "ai";
 import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.API_KEY });
 
 export const runtime = "edge";
 
-type Message = {
-  role: "user" | "assistant" | "system";
-  content: string;
-};
-
 export async function POST(req: Request) {
+  const { messages }: { messages: Message[] } = await req.json();
+
   try {
-    const { messages }: { messages: Message[] } = await req.json();
-    console.log("Received messages:", messages);
-
-    const response = await getGroqChatCompletion(messages);
-
-    // Create stream from the response
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const responseText = response.choices[0]?.message?.content || "";
-          console.log("AI Response:", responseText);
-
-          // Send the response as a stream
-          const encoder = new TextEncoder();
-          controller.enqueue(encoder.encode(responseText));
-          controller.close();
-        } catch (error) {
-          console.error("Stream error:", error);
-          controller.error(error);
-        }
-      },
-    });
-
-    return new StreamingTextResponse(stream);
-  } catch (error) {
-    console.error("POST error:", error);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-}
-
-async function getGroqChatCompletion(messages: Message[]) {
-  try {
-    // Get only the last user message
-    const lastMessage = messages[messages.length - 1];
-
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-70b-versatile",
       messages: [
@@ -58,16 +17,31 @@ async function getGroqChatCompletion(messages: Message[]) {
           content:
             "Anda adalah asisten yang membantu mahasiswa dalam memahami hak dan kewajiban di universitas. Berikan jawaban yang ringkas, jelas dan to the point.",
         },
-        lastMessage,
+        ...messages, // Kirim semua pesan untuk konteks yang lebih baik
       ],
       temperature: 0.5,
       max_tokens: 1024,
+      stream: true, // Aktifkan streaming
     });
 
-    console.log("Groq response:", completion);
-    return completion;
+    // Ubah response Groq menjadi ReadableStream
+    const stream = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of completion) {
+          const text = chunk.choices[0]?.delta?.content || "";
+          const queue = new TextEncoder().encode(text);
+          controller.enqueue(queue);
+        }
+        controller.close();
+      },
+    });
+
+    return new StreamingTextResponse(stream);
   } catch (error) {
-    console.error("Groq API error:", error);
-    throw error;
+    console.error("Error in chat completion:", error);
+    return new Response(
+      JSON.stringify({ error: "There was an error processing your request" }),
+      { status: 500 },
+    );
   }
 }

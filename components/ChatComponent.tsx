@@ -1,15 +1,18 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowLeft, User, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ChatComponent() {
+  const [error, setError] = useState<string | null>(null);
+
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
       api: "/api/chat",
@@ -22,14 +25,16 @@ export default function ChatComponent() {
         },
       ],
       onResponse: (response) => {
-        // This ensures we're properly handling the streaming response
-        if (!response.ok) {
-          console.error("Response error:", response.statusText);
-        }
+        console.log("Chat response received:", response);
       },
       onFinish: (message) => {
-        // Handle completion of the response
-        console.log("Response finished:", message);
+        console.log("Chat message finished:", message);
+      },
+      onError: (error) => {
+        console.error("Chat error:", error);
+        setError(
+          "Terjadi kesalahan saat berkomunikasi dengan AI. Silakan coba lagi.",
+        );
       },
     });
 
@@ -39,6 +44,10 @@ export default function ChatComponent() {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
+  }, [messages]);
+
+  useEffect(() => {
+    console.log("Current messages:", messages);
   }, [messages]);
 
   const formatMessage = (content: string) => {
@@ -58,61 +67,62 @@ export default function ChatComponent() {
             className="flex items-center hover:opacity-80 transition-opacity"
           >
             <ArrowLeft className="h-6 w-6 mr-2" />
+            <span>Kembali</span>
           </Link>
         </div>
       </header>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 p-4">
         <div className="space-y-4 max-w-3xl mx-auto">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex items-start space-x-2",
-                message.role === "user" && "flex-row-reverse space-x-reverse",
-              )}
-            >
-              <div
+          {messages.map((message) => {
+            console.log("Rendering message:", message);
+            return (
+              <Card
+                key={message.id}
                 className={cn(
-                  "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-                  message.role === "user" ? "bg-primary" : "bg-secondary",
-                )}
-              >
-                {message.role === "user" ? (
-                  <User className="h-5 w-5 text-primary-foreground" />
-                ) : (
-                  <Bot className="h-5 w-5 text-secondary-foreground" />
-                )}
-              </div>
-
-              <div
-                className={cn(
-                  "flex-grow max-w-[80%] rounded-lg px-4 py-2",
                   message.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground",
                 )}
               >
-                <div className="whitespace-pre-wrap text-sm">
-                  {formatMessage(message.content)}
-                </div>
-              </div>
-            </div>
-          ))}
+                <CardContent className="p-4 flex items-start space-x-2">
+                  <div
+                    className={cn(
+                      "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+                      message.role === "user"
+                        ? "bg-primary-foreground"
+                        : "bg-secondary-foreground",
+                    )}
+                  >
+                    {message.role === "user" ? (
+                      <User className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Bot className="h-5 w-5 text-secondary" />
+                    )}
+                  </div>
+                  <div className="flex-grow">
+                    <div className="whitespace-pre-wrap text-sm">
+                      {formatMessage(message.content)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
 
           {isLoading && (
-            <div className="flex items-start space-x-2">
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                <Bot className="h-5 w-5 text-secondary-foreground" />
-              </div>
-              <div className="bg-secondary rounded-lg px-4 py-2">
+            <Card className="bg-secondary">
+              <CardContent className="p-4 flex items-start space-x-2">
+                <div className="w-8 h-8 rounded-full bg-secondary-foreground flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-secondary" />
+                </div>
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
                   <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.4s]" />
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </ScrollArea>
