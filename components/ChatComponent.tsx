@@ -117,10 +117,12 @@ export default function ChatComponent() {
                 <div className="w-8 h-8 rounded-full bg-secondary-foreground flex items-center justify-center">
                   <Bot className="h-5 w-5 text-secondary" />
                 </div>
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
-                  <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.4s]" />
+                <div className="flex items-center h-8 px-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <div className="w-2 h-2 bg-secondary-foreground rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
