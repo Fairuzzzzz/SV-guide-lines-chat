@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   try {
     // Construct the system message with rules
-    const systemMessage = {
+    const systemMessage: Groq.ChatCompletionMessage = {
       role: "system",
       content: `Anda adalah asisten yang membantu mahasiswa dalam memahami hak dan kewajiban di Sekolah Vokasi Universitas Gadjah Mada.
       Gunakan informasi berikut sebagai panduan untuk menjawab pertanyaan:
@@ -25,8 +25,8 @@ export async function POST(req: Request) {
     };
 
     // Convert messages to the format expected by Groq
-    const groqMessages = messages.map((msg) => ({
-      role: msg.role as "user" | "assistant" | "system",
+    const groqMessages: Groq.ChatCompletionMessage[] = messages.map((msg) => ({
+      role: msg.role as Groq.ChatCompletionRole,
       content: msg.content,
     }));
 
