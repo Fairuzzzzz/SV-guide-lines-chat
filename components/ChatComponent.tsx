@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import { useChat } from "ai/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,6 @@ import { ArrowLeft, User, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ChatComponent() {
-  const [error, setError] = useState<string | null>(null);
-
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
       api: "/api/chat",
@@ -33,9 +31,6 @@ export default function ChatComponent() {
       },
       onError: (error) => {
         console.error("Chat error:", error);
-        setError(
-          "Terjadi kesalahan saat berkomunikasi dengan AI. Silakan coba lagi.",
-        );
       },
     });
 
