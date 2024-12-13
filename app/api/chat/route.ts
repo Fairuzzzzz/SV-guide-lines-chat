@@ -8,12 +8,19 @@ export const runtime = "edge";
 // Use an environment variable to store the rules
 const rulesData = JSON.parse(process.env.AI_RULES || "{}");
 
+// Define our own types if Groq SDK doesn't export them
+type ChatCompletionRole = "system" | "user" | "assistant";
+type ChatCompletionMessage = {
+  role: ChatCompletionRole;
+  content: string;
+};
+
 export async function POST(req: Request) {
   const { messages }: { messages: Message[] } = await req.json();
 
   try {
     // Construct the system message with rules
-    const systemMessage: Groq.ChatCompletionMessage = {
+    const systemMessage: ChatCompletionMessage = {
       role: "system",
       content: `Anda adalah asisten yang membantu mahasiswa dalam memahami hak dan kewajiban di Sekolah Vokasi Universitas Gadjah Mada.
       Gunakan informasi berikut sebagai panduan untuk menjawab pertanyaan:
@@ -25,8 +32,8 @@ export async function POST(req: Request) {
     };
 
     // Convert messages to the format expected by Groq
-    const groqMessages: Groq.ChatCompletionMessage[] = messages.map((msg) => ({
-      role: msg.role as Groq.ChatCompletionRole,
+    const groqMessages: ChatCompletionMessage[] = messages.map((msg) => ({
+      role: msg.role as ChatCompletionRole,
       content: msg.content,
     }));
 
