@@ -5,7 +5,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Chatbot Hak dan Kewajiban Mahasiswa",
+  title: "SV Guidelines Chat",
   description:
     "Pelajari hak dan kewajiban Anda sebagai mahasiswa dengan bantuan AI",
 };

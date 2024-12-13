@@ -5,26 +5,34 @@ const groq = new Groq({ apiKey: process.env.API_KEY });
 
 export const runtime = "edge";
 
+// Use an environment variable to store the rules
+const rulesData = JSON.parse(process.env.AI_RULES || "{}");
+
 export async function POST(req: Request) {
   const { messages }: { messages: Message[] } = await req.json();
 
   try {
+    // Construct the system message with rules
+    const systemMessage = {
+      role: "system",
+      content: `Anda adalah asisten yang membantu mahasiswa dalam memahami hak dan kewajiban di Sekolah Vokasi Universitas Gadjah Mada.
+      Gunakan informasi berikut sebagai panduan untuk menjawab pertanyaan:
+      ${JSON.stringify(rulesData)}
+
+      Berikan jawaban yang ringkas, jelas, dan to the point berdasarkan peraturan di atas.
+      Jika ada pertanyaan di luar cakupan peraturan ini, katakan bahwa informasi tersebut tidak tersedia dalam peraturan yang ada.
+      Jika pertanyaan masih di cakupan Hak dan Kewajiban sebagai mahasiswa, jawablah secara universal`,
+    };
+
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Anda adalah asisten yang membantu mahasiswa dalam memahami hak dan kewajiban di universitas. Berikan jawaban yang ringkas, jelas dan to the point.",
-        },
-        ...messages, // Kirim semua pesan untuk konteks yang lebih baik
-      ],
+      messages: [systemMessage, ...messages],
       temperature: 0.5,
       max_tokens: 1024,
-      stream: true, // Aktifkan streaming
+      stream: true,
     });
 
-    // Ubah response Groq menjadi ReadableStream
+    // Convert Groq response to ReadableStream
     const stream = new ReadableStream({
       async start(controller) {
         for await (const chunk of completion) {
