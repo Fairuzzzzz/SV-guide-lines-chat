@@ -11,7 +11,7 @@ import { ArrowLeft, User, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ChatComponent() {
-  const [setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
