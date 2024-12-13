@@ -19,12 +19,6 @@ export default function LandingPage() {
             >
               Tentang
             </Link>
-            <Link
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              href="#contact"
-            >
-              Kontak
-            </Link>
           </nav>
         </div>
       </header>
@@ -48,11 +42,6 @@ export default function LandingPage() {
                 <Link href="/chat">
                   <Button size="lg">Mulai Chat</Button>
                 </Link>
-                <Link href="#about">
-                  <Button variant="outline" size="lg">
-                    Pelajari Lebih Lanjut
-                  </Button>
-                </Link>
               </div>
             </div>
           </div>
@@ -72,28 +61,6 @@ export default function LandingPage() {
                   lingkungan kampus. Dengan menggunakan teknologi AI, kami
                   menyediakan informasi yang akurat dan up-to-date.
                 </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Section */}
-        <section id="contact" className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                  Butuh Bantuan?
-                </h2>
-                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  Tim kami siap membantu Anda dengan pertanyaan atau masalah
-                  yang Anda hadapi.
-                </p>
-              </div>
-              <div className="w-full max-w-sm space-y-2">
-                <Button className="w-full" size="lg">
-                  Hubungi Kami
-                </Button>
               </div>
             </div>
           </div>

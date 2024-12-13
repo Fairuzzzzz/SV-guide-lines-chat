@@ -24,9 +24,15 @@ export async function POST(req: Request) {
       Jika pertanyaan masih di cakupan Hak dan Kewajiban sebagai mahasiswa, jawablah secara universal`,
     };
 
+    // Convert messages to the format expected by Groq
+    const groqMessages = messages.map((msg) => ({
+      role: msg.role as "user" | "assistant" | "system",
+      content: msg.content,
+    }));
+
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-70b-versatile",
-      messages: [systemMessage, ...messages],
+      messages: [systemMessage, ...groqMessages],
       temperature: 0.5,
       max_tokens: 1024,
       stream: true,
